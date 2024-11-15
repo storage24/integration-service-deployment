@@ -1,0 +1,38 @@
+# Local Terraform state
+*.tfstate
+*.tfstate.*
+
+# Backup files created by Terraform
+*.backup
+
+# Crash logs
+crash.log
+
+# Terraform variable files containing sensitive data
+*.tfvars
+*.tfvars.json
+
+# Ignore override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore generated plan files
+*.tfplan
+
+# Ignore the .terraform directory, which contains provider plugins and metadata
+.terraform/
+.terraform.lock.hcl
+
+# Ignore temporary files
+*.log
+*.bak
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+
+# Ignore credentials or configuration files
+.terraformrc
+terraform.rc
