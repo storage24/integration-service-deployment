@@ -1,0 +1,116 @@
+[
+    {
+        "name": "subscription_name",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "Set by subscription"
+    },
+    {
+        "name": "message_id",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "Set by subscription"
+    },
+    {
+        "name": "publish_time",
+        "type": "TIMESTAMP",
+        "mode": "NULLABLE",
+        "description": "Set by subscription"
+    },
+    {
+        "name": "attributes",
+        "type": "STRING",
+        "mode": "REQUIRED",
+        "description": "Set by subscription"
+    },
+    {
+        "name": "sourceSystem",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The source system that generated the event (e.g., 'Hubspot')."
+    },
+    {
+        "name": "entity",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The entity type related to the event (e.g., 'Product', 'Contact')."
+    },
+    {
+        "name": "key",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The unique key used to identify the entity in the source system (e.g., 'hs_object_id')."
+    },
+    {
+        "name": "properties",
+        "type": "STRING",
+        "mode": "REPEATED",
+        "description": "List of properties associated with the event (e.g., 'price', 'quantity')."
+    },
+    {
+        "name": "version",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "Version of the event schema or entity."
+    },
+    {
+        "name": "notes",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "Additional notes or comments related to the event."
+    },
+    {
+        "name": "timestamp",
+        "type": "TIMESTAMP",
+        "mode": "NULLABLE",
+        "description": "The timestamp when the event was created or received."
+    },
+    {
+        "name": "correlationId",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "A unique identifier to correlate related events across systems."
+    },
+    {
+        "name": "lastCacheTimestamp",
+        "type": "TIMESTAMP",
+        "mode": "NULLABLE",
+        "description": "The timestamp when the event's cache was last updated."
+    },
+    {
+        "name": "lastCacheId",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The unique identifier for the event cache record."
+    },
+    {
+        "name": "operation",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The type of operation that triggered the event (e.g., 'create', 'update', 'delete')."
+    },
+    {
+        "name": "entityId",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The unique identifier of the entity related to the event (e.g., '12345')."
+    },
+    {
+        "name": "data",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "Event"
+    },
+    {
+        "name": "state",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The current state of the entity after the event occurred (e.g., 'active', 'inactive')."
+    },
+    {
+        "name": "previousState",
+        "type": "STRING",
+        "mode": "NULLABLE",
+        "description": "The previous state of the entity before the event occurred (e.g., 'inactive', 'active')."
+    }
+]

@@ -1,31 +1,3 @@
-variable "project_id" {
-  type    = string
-  default = "storage24-integration-services"
-}
-variable "region" {
-  type    = string
-  default = "europe-west3"
-}
-variable "zone" {
-  type    = string
-  default = "europe-west3-c"
-}
-
-terraform {
-  required_providers {
-    google = {
-      source = "hashicorp/google"
-      version = "4.51.0"
-    }
-  }
-}
-
-provider "google" {
-  credentials = file("/Users/oliver.bojahr/.config/gcloud/application_default_credentials.json")
-  project     = var.project_id
-  region      = var.region
-}
-
 # Step 1: Create a custom service account
 resource "google_service_account" "n8n_service_account" {
   account_id   = "n8n-sa"
@@ -42,7 +14,7 @@ resource "google_project_iam_member" "n8n_sa_iam" {
 # Step 2: Reserve a static IP
 resource "google_compute_address" "n8n_static_ip" {
   name   = "n8n-static-ip"
-  region = var.region 
+  region = var.region
 }
 
 # Step 3: Create a persistent disk
@@ -54,13 +26,13 @@ resource "google_compute_resource_policy" "n8n_snapshot_policy" {
   snapshot_schedule_policy {
     schedule {
       daily_schedule {
-        days_in_cycle = 1  # Snapshot daily
-        start_time    = "04:00"  # Time in UTC, adjust as necessary
+        days_in_cycle = 1       # Snapshot daily
+        start_time    = "04:00" # Time in UTC, adjust as necessary
       }
     }
 
     retention_policy {
-      max_retention_days = 7  # Retain snapshots for 7 days, adjust as necessary
+      max_retention_days    = 7 # Retain snapshots for 7 days, adjust as necessary
       on_source_disk_delete = "KEEP_AUTO_SNAPSHOTS"
     }
 
@@ -74,11 +46,11 @@ resource "google_compute_resource_policy" "n8n_snapshot_policy" {
 
 # Create the persistent disk
 resource "google_compute_disk" "n8n_persistent_disk" {
-  name  = "n8n-data-disk"
-  type  = "pd-standard"  # or "pd-ssd"
-  zone  = var.zone
+  name = "n8n-data-disk"
+  type = "pd-standard" # or "pd-ssd"
+  zone = var.zone
 
-  size  = 20  # Size in GB
+  size = 20 # Size in GB
 
 }
 # Attach the snapshot policy to the disk
@@ -98,7 +70,7 @@ resource "google_compute_instance" "n8n_instance" {
   boot_disk {
     initialize_params {
       image = "ubuntu-os-cloud/ubuntu-2004-lts"
-      size  = 50  # 50GB boot disk
+      size  = 50 # 50GB boot disk
     }
   }
 
@@ -106,7 +78,7 @@ resource "google_compute_instance" "n8n_instance" {
   network_interface {
     network    = "default"
     subnetwork = "default"
-    
+
     # Assign the reserved static IP to this instance
     access_config {
       nat_ip = google_compute_address.n8n_static_ip.address
@@ -241,11 +213,4 @@ resource "google_compute_firewall" "default" {
 
   source_ranges = ["0.0.0.0/0"]
   target_tags   = ["http-server", "https-server"]
-}
-
-
-# Output the external IP address of the instance
-output "n8n_instance_external_ip" {
-  value       = google_compute_address.n8n_static_ip.address
-  description = "The external IP address of the n8n server instance"
 }
