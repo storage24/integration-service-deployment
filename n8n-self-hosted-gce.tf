@@ -63,7 +63,7 @@ resource "google_compute_disk_resource_policy_attachment" "n8n_persistent_disk_a
 # Step 4: Create the GCE instance with the persistent disk
 resource "google_compute_instance" "n8n_instance" {
   name         = "n8n-server"
-  machine_type = "e2-standard-2"
+  machine_type = "e2-standard-4"
   zone         = var.zone
 
   # Boot disk settings
@@ -127,11 +127,19 @@ resource "google_compute_instance" "n8n_instance" {
     # Run the n8n docker container
     sudo docker run -d \
         --name n8n \
+        --restart unless-stopped \
+        --health-cmd="wget -q -O - http://localhost:5678 || exit 1" \
+        --health-interval=30s \
+        --health-retries=3 \
+        --health-start-period=10s \
+        --health-timeout=5s \
         -e WEBHOOK_URL='https://n8n.storage24.com/' \
+        -e NODE_OPTIONS="--max-old-space-size=8192" \
+        -e N8N_LOG_LEVEL=debug \
+        -e N8N_LOG_OUTPUT=console \
         -p 5678:5678 \
         -v /etc/n8n:/home/node/.n8n \
         n8nio/n8n
-
 
     # Obtain SSL certificate from Let's Encrypt using Certbot
     systemctl stop nginx

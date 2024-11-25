@@ -20,7 +20,7 @@
     {
         "name": "attributes",
         "type": "STRING",
-        "mode": "REQUIRED",
+        "mode": "NULLABLE",
         "description": "Set by subscription"
     },
     {
@@ -66,6 +66,12 @@
         "description": "The timestamp when the event was created or received."
     },
     {
+        "name": "executionTime",
+        "type": "INT64",
+        "mode": "NULLABLE",
+        "description": "The duration it took to create the event."
+    },
+    {
         "name": "correlationId",
         "type": "STRING",
         "mode": "NULLABLE",
@@ -97,12 +103,6 @@
     },
     {
         "name": "data",
-        "type": "STRING",
-        "mode": "NULLABLE",
-        "description": "Event"
-    },
-    {
-        "name": "state",
         "type": "STRING",
         "mode": "NULLABLE",
         "description": "The current state of the entity after the event occurred (e.g., 'active', 'inactive')."

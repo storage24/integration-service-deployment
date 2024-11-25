@@ -16,16 +16,3 @@ resource "google_pubsub_subscription" "subscriptions" {
 
   message_retention_duration = "604800s" # 7 days
 }
-
-# Subscription writes events to BigQuery
-resource "google_pubsub_subscription" "raw_subscriptions" {
-  for_each = toset(var.entities)
-  name     = "${each.key}-raw-event-subscription"
-  topic    = google_pubsub_topic.topics[each.key].name
-
-  bigquery_config {
-    table                 = "${var.project_id}.${google_bigquery_dataset.dataset.dataset_id}.${google_bigquery_table.events_table.table_id}"
-    use_topic_schema      = true
-    write_metadata        = true
-  }
-}
