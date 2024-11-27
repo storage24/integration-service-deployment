@@ -135,7 +135,6 @@ resource "google_compute_instance" "n8n_instance" {
         --health-timeout=5s \
         -e WEBHOOK_URL='https://n8n.storage24.com/' \
         -e NODE_OPTIONS="--max-old-space-size=8192" \
-        -e N8N_LOG_LEVEL=debug \
         -e N8N_LOG_OUTPUT=console \
         -p 5678:5678 \
         -v /etc/n8n:/home/node/.n8n \
