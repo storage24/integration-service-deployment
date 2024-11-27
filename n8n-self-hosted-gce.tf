@@ -50,7 +50,7 @@ resource "google_compute_disk" "n8n_persistent_disk" {
   type = "pd-standard" # or "pd-ssd"
   zone = var.zone
 
-  size = 20 # Size in GB
+  size = 2000 # Size in GB
 
 }
 # Attach the snapshot policy to the disk
@@ -136,6 +136,11 @@ resource "google_compute_instance" "n8n_instance" {
         -e WEBHOOK_URL='https://n8n.storage24.com/' \
         -e NODE_OPTIONS="--max-old-space-size=8192" \
         -e N8N_LOG_OUTPUT=console \
+        -e DB_SQLITE_VACUUM_ON_STARTUP=true \
+        -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true \
+        -e EXECUTIONS_DATA_PRUNE=true \
+        -e EXECUTIONS_DATA_MAX_AGE=120 \
+        -e EXECUTIONS_DATA_PRUNE_MAX_COUNT=1000 \
         -p 5678:5678 \
         -v /etc/n8n:/home/node/.n8n \
         n8nio/n8n
