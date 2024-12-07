@@ -52,7 +52,7 @@ Setting Up Terraform Locally
 In the project directory, run:
 ```
 terraform init
-````
+```
 
 This command initializes the Terraform workspace and downloads any required providers.
 
@@ -79,7 +79,7 @@ terraform plan
 Apply the configuration to deploy resources:
 ```
 terraform apply
-````
+```
 
 Type yes when prompted to confirm.
 
@@ -110,3 +110,37 @@ This command will prompt for confirmation before deleting all resources.
 ### Outputs
 
 - n8n_instance_external_ip: The external IP address of the n8n server instance, which you can use to access the service.
+
+### Debugging
+
+Watch the startup script
+```
+tail -f -n 10000 /var/log/syslog | grep startup-script
+```
+
+### Backup and recovery manually
+
+Jump into the main container:
+
+```
+sudo docker exec -it n8n sh
+```
+
+inside cd to the .n8n folder. Insider there you might create backup folder.
+
+```
+cd .n8n
+mkdir -p backup/latest/workflows
+mkdir -p backup/latest/credentials
+```
+
+Backup like
+```
+n8n export:workflow --backup --output=backups/latest/workflows
+n8n export:credentials --backup --output=backups/latest/credentials
+```
+Restore like
+```
+n8n import:workflow --separate --input=backups/latest/workflows
+n8n import:credentials --separate --input=backups/latest/credentials
+```

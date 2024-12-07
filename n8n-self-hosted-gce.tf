@@ -91,6 +91,57 @@ resource "google_compute_instance" "n8n_instance" {
     mode   = "READ_WRITE"
   }
 
+  metadata = {
+    ssh-keys = "ubuntu:${file("~/.ssh/id_ed25519.pub")}" # Add your public key here
+  }
+
+  # Config files
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mkdir /etc/startup",
+      "sudo chmod a+w /etc/startup",
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/id_ed25519")
+      host        = self.network_interface[0].access_config[0].nat_ip
+    }
+  }
+  provisioner "file" {
+    source      = "support/docker-compose.yml"
+    destination = "/etc/startup/docker-compose.yml"
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/id_ed25519")
+      host        = self.network_interface[0].access_config[0].nat_ip
+    }
+  }
+
+  provisioner "file" {
+    source      = "support/.env"
+    destination = "/etc/startup/.env"
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/id_ed25519")
+      host        = self.network_interface[0].access_config[0].nat_ip
+    }
+  }
+
+  provisioner "file" {
+    source      = "support/init-data.sh"
+    destination = "/etc/startup/init-data.sh"
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/id_ed25519")
+      host        = self.network_interface[0].access_config[0].nat_ip
+    }
+  }
+
   # Metadata startup script to install Docker and mount the disk
   metadata_startup_script = <<-EOT
     #! /bin/bash
@@ -98,6 +149,20 @@ resource "google_compute_instance" "n8n_instance" {
     sudo apt-get install -y nginx certbot python3-certbot-nginx docker.io
     sudo systemctl start docker
     sudo systemctl enable docker
+    # Add Docker's official GPG key:
+    sudo apt-get update
+    sudo apt-get install ca-certificates curl
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+    # Add the repository to Apt sources:
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get update
+    sudo apt-get install docker-compose-plugin
 
     # Format the persistent disk if necessary
     if ! blkid /dev/sdb; then
@@ -110,10 +175,13 @@ resource "google_compute_instance" "n8n_instance" {
 
     sudo rm -rf /etc/letsencrypt
 
-    sudo ln -s /mnt/n8n_persistent_disk/n8n /etc/n8n
+    sudo ln -s /mnt/n8n_persistent_disk/n8n_storage /etc/n8n_storage
+    sudo ln -s /mnt/n8n_persistent_disk/db_storage /etc/db_storage
+    sudo ln -s /mnt/n8n_persistent_disk/redis_storage /etc/redis_storage
     sudo ln -s /mnt/n8n_persistent_disk/letsencrypt /etc/letsencrypt
     
-    sudo chown -R 1000:1000 /etc/n8n
+    sudo chown -R 1000:1000 /etc/n8n_storage
+    sudo chmod a+w /etc/n8n_storage
     sudo chown -R root:root /etc/letsencrypt
     sudo chmod -R 755 /etc/letsencrypt
 
@@ -124,27 +192,10 @@ resource "google_compute_instance" "n8n_instance" {
     curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
     sudo bash add-google-cloud-ops-agent-repo.sh --also-install
 
-    # Run the n8n docker container
-    sudo docker run -d \
-        --name n8n \
-        --restart unless-stopped \
-        --health-cmd="wget -q -O - http://localhost:5678 || exit 1" \
-        --health-interval=30s \
-        --health-retries=3 \
-        --health-start-period=10s \
-        --health-timeout=5s \
-        -e WEBHOOK_URL='https://n8n.storage24.com/' \
-        -e NODE_OPTIONS="--max-old-space-size=8192" \
-        -e N8N_LOG_OUTPUT=console \
-        -e DB_SQLITE_VACUUM_ON_STARTUP=true \
-        -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true \
-        -e EXECUTIONS_DATA_PRUNE=true \
-        -e EXECUTIONS_DATA_MAX_AGE=120 \
-        -e EXECUTIONS_DATA_PRUNE_MAX_COUNT=1000 \
-        -p 5678:5678 \
-        -v /etc/n8n:/home/node/.n8n \
-        n8nio/n8n
-
+    # Run n8n docker compose infrastructure (Redis, Postgres, n8n, plus worker and webhook worker)
+    cd /etc/startup
+    sudo docker compose up -d
+    
     # Obtain SSL certificate from Let's Encrypt using Certbot
     systemctl stop nginx
     # Check if certificate exists, if not, request it
@@ -194,6 +245,28 @@ resource "google_compute_instance" "n8n_instance" {
                 proxy_read_timeout 86400s;
                 proxy_send_timeout 86400s;
             }
+            # Webhook traffic
+            location /webhook/ {
+                proxy_pass http://webhook_pool; # Direct to the webhook upstream
+                proxy_set_header Host \$host;
+                proxy_set_header X-Real-IP \$remote_addr;
+                proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto \$scheme;
+
+                # WebSocket headers
+                proxy_set_header Upgrade \$http_upgrade;
+                proxy_set_header Connection "Upgrade";
+
+                # Timeouts for long-lived connections
+                proxy_read_timeout 86400s;
+                proxy_send_timeout 86400s;
+            }
+        }
+        # Define upstream group for webhook processors
+        upstream webhook_pool {
+            server localhost:5681; # Webhook processor 1
+            server localhost:5682; # Webhook processor 2
+            server localhost:5683; # Webhook processor 3
         }
     EOF
 

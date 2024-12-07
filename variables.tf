@@ -16,7 +16,7 @@ variable "zone" {
 # Add more entities as needed <sourceSystem>-<entity>
 variable "entities" {
   type    = list(string)
-  default = ["hubspot-product", "hubspot-park", "hubspot-owner", "hubspot-task", "hubspot-call", "hubspot-email"] 
+  default = ["hubspot-product", "hubspot-park", "hubspot-owner", "hubspot-task", "hubspot-call", "hubspot-email", "hubspot-user"] 
 }
 variable "webhook_base_url" {
   type    = string
